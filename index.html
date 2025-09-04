@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise do Reino 3618 - Impacto das Farms</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-8">
+            <h1 class="text-2xl md:text-4xl font-bold mb-2 text-blue-400">Reino 3618 - Análise de Farms</h1>
+            <p class="text-sm md:text-base text-gray-300">Como as farms estão impactando o poder do reino</p>
+        </header>
+
+        <!-- Cards com estatísticas principais -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+            <div class="bg-gray-800 rounded-lg p-4 md:p-6 text-center">
+                <h3 class="text-sm md:text-lg font-semibold text-gray-300 mb-2">Poder Total (Top 310)</h3>
+                <p class="text-2xl md:text-3xl font-bold text-green-400" id="poderTotal">-</p>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-4 md:p-6 text-center">
+                <h3 class="text-sm md:text-lg font-semibold text-gray-300 mb-2">Poder das Farms</h3>
+                <p class="text-2xl md:text-3xl font-bold text-red-400" id="poderFarms">-</p>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-4 md:p-6 text-center">
+                <h3 class="text-sm md:text-lg font-semibold text-gray-300 mb-2">Total de Farms</h3>
+                <p class="text-2xl md:text-3xl font-bold text-yellow-400" id="totalFarms">-</p>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-4 md:p-6 text-center">
+                <h3 class="text-sm md:text-lg font-semibold text-gray-300 mb-2">% Farms do Poder</h3>
+                <p class="text-2xl md:text-3xl font-bold text-purple-400" id="percentualFarms">-</p>
+            </div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+            <!-- Gráfico de Pizza -->
+            <div class="bg-gray-800 rounded-lg p-4 md:p-6">
+                <h2 class="text-xl md:text-2xl font-bold mb-4 text-center">Distribuição do Poder</h2>
+                <div class="relative h-64 md:h-80">
+                    <canvas id="pizzaChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Gráfico de Barras -->
+            <div class="bg-gray-800 rounded-lg p-4 md:p-6">
+                <h2 class="text-xl md:text-2xl font-bold mb-4 text-center">Comparativo de Poder</h2>
+                <div class="relative h-64 md:h-80">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabela com top farms -->
+        <div class="bg-gray-800 rounded-lg p-4 md:p-6 mt-6 md:mt-8">
+            <h2 class="text-xl md:text-2xl font-bold mb-4">Top 10 Farms por Poder</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm md:text-base">
+                    <thead class="border-b border-gray-600">
+                        <tr>
+                            <th class="py-2 px-2 md:px-4">Rank</th>
+                            <th class="py-2 px-2 md:px-4">Nome</th>
+                            <th class="py-2 px-2 md:px-4 hidden sm:table-cell">ID</th>
+                            <th class="py-2 px-2 md:px-4">Poder</th>
+                            <th class="py-2 px-2 md:px-4 hidden md:table-cell">Aliança</th>
+                        </tr>
+                    </thead>
+                    <tbody id="topFarms" class="divide-y divide-gray-600">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <footer class="text-center mt-6 md:mt-8 text-gray-400 px-2">
+            <p class="text-sm md:text-base">Dados extraídos dos primeiros 310 governadores do reino 3618</p>
+            <p class="text-xs md:text-sm mt-2">Farms identificadas: CH=25, Clickable=TRUE, Aliança≠"Thousand Sunny br"</p>
+        </footer>
+    </div>
+
+    <script>
+        // Dados da análise
+        const dados = {
+            "poder_total_top310": 8901031920,
+            "poder_total_farms": 2596766566,
+            "total_farms": 114,
+            "porcentagem_farms": 29.17,
+            "total_top310": 310
+        };
+
+        // Função para formatar números
+        function formatNumber(num) {
+            return num.toLocaleString('pt-BR');
+        }
+
+        // Atualizar cards
+        document.getElementById('poderTotal').textContent = formatNumber(dados.poder_total_top310);
+        document.getElementById('poderFarms').textContent = formatNumber(dados.poder_total_farms);
+        document.getElementById('totalFarms').textContent = dados.total_farms;
+        document.getElementById('percentualFarms').textContent = dados.porcentagem_farms + '%';
+
+        // Gráfico de Pizza
+        const ctxPizza = document.getElementById('pizzaChart').getContext('2d');
+        new Chart(ctxPizza, {
+            type: 'pie',
+            data: {
+                labels: ['Farms', 'Outros Governadores'],
+                datasets: [{
+                    data: [dados.poder_total_farms, dados.poder_total_top310 - dados.poder_total_farms],
+                    backgroundColor: ['#ef4444', '#10b981'],
+                    borderColor: '#374151',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#ffffff'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Gráfico de Barras
+        const ctxBar = document.getElementById('barChart').getContext('2d');
+        new Chart(ctxBar, {
+            type: 'bar',
+            data: {
+                labels: ['Poder das Farms', 'Poder dos Outros'],
+                datasets: [{
+                    data: [dados.poder_total_farms, dados.poder_total_top310 - dados.poder_total_farms],
+                    backgroundColor: ['#ef4444', '#10b981'],
+                    borderColor: ['#dc2626', '#059669'],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: '#ffffff',
+                            callback: function(value) {
+                                return (value / 1000000000).toFixed(1) + 'B';
+                            }
+                        },
+                        grid: {
+                            color: '#374151'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: '#ffffff'
+                        },
+                        grid: {
+                            color: '#374151'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Carregar e exibir top farms
+        fetch('dados_filtrados.json')
+            .then(response => response.json())
+            .then(farms => {
+                const topFarms = farms.slice(0, 10);
+                const tbody = document.getElementById('topFarms');
+                
+                topFarms.forEach((farm, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="py-2 px-2 md:px-4">#${farm['#']}</td>
+                        <td class="py-2 px-2 md:px-4 font-semibold">${farm['Governor Name']}</td>
+                        <td class="py-2 px-2 md:px-4 text-gray-400 hidden sm:table-cell">${farm['Governor ID']}</td>
+                        <td class="py-2 px-2 md:px-4 text-green-400">${formatNumber(farm.Power)}</td>
+                        <td class="py-2 px-2 md:px-4 text-blue-400 hidden md:table-cell">${farm.Alliance || 'Sem aliança'}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            });
+    </script>
+</body>
+</html>
