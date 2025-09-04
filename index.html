@@ -17,7 +17,7 @@
         <!-- Cards com estatísticas principais -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
             <div class="bg-gray-800 rounded-lg p-4 md:p-6 text-center">
-                <h3 class="text-sm md:text-lg font-semibold text-gray-300 mb-2">Poder Total (Top 310)</h3>
+                <h3 class="text-sm md:text-lg font-semibold text-gray-300 mb-2">Poder Total (Top 300)</h3>
                 <p class="text-2xl md:text-3xl font-bold text-green-400" id="poderTotal">-</p>
             </div>
             <div class="bg-gray-800 rounded-lg p-4 md:p-6 text-center">
@@ -53,9 +53,25 @@
             </div>
         </div>
 
-        <!-- Tabela com top farms -->
+        <!-- Tabela com todas as farms -->
         <div class="bg-gray-800 rounded-lg p-4 md:p-6 mt-6 md:mt-8">
-            <h2 class="text-xl md:text-2xl font-bold mb-4">Top 10 Farms por Poder</h2>
+            <h2 class="text-xl md:text-2xl font-bold mb-4">Farms CH 25 - Reino 3618</h2>
+            
+            <!-- Filtros -->
+            <div class="flex flex-col md:flex-row gap-4 mb-6">
+                <div class="flex-1">
+                    <input type="text" 
+                           id="searchInput" 
+                           placeholder="Pesquisar por nick ou ID..." 
+                           class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:border-blue-500">
+                </div>
+                <div class="md:w-48">
+                    <select id="allianceFilter" 
+                            class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:border-blue-500">
+                        <option value="">Todas as Alianças</option>
+                    </select>
+                </div>
+            </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm md:text-base">
                     <thead class="border-b border-gray-600">
@@ -71,22 +87,53 @@
                     </tbody>
                 </table>
             </div>
+            
+            <!-- Paginação -->
+            <div class="flex flex-col md:flex-row justify-between items-center mt-4 gap-4">
+                <div class="flex flex-col md:flex-row items-center gap-4">
+                    <div class="text-sm text-gray-400">
+                        Mostrando <span id="showingStart">0</span> - <span id="showingEnd">0</span> de <span id="totalResults">0</span> farms
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm text-gray-400">Itens por página:</label>
+                        <select id="itemsPerPageSelect" 
+                                class="px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-blue-500">
+                            <option value="10">10</option>
+                            <option value="15" selected>15</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button id="prevBtn" 
+                            class="px-3 py-1 bg-gray-700 border border-gray-600 rounded text-white hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Anterior
+                    </button>
+                    <span id="pageInfo" class="px-3 py-1 text-gray-400">Página 1 de 1</span>
+                    <button id="nextBtn" 
+                            class="px-3 py-1 bg-gray-700 border border-gray-600 rounded text-white hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Próxima
+                    </button>
+                </div>
+            </div>
         </div>
 
         <footer class="text-center mt-6 md:mt-8 text-gray-400 px-2">
-            <p class="text-sm md:text-base">Dados extraídos dos primeiros 310 governadores do reino 3618</p>
+            <p class="text-sm md:text-base">Dados extraídos dos primeiros 300 governadores do reino 3618</p>
             <p class="text-xs md:text-sm mt-2">Farms identificadas: CH=25, Clickable=TRUE, Aliança≠"Thousand Sunny br"</p>
         </footer>
     </div>
 
     <script>
-        // Dados da análise
-        const dados = {
-            "poder_total_top310": 8901031920,
-            "poder_total_farms": 2596766566,
-            "total_farms": 114,
-            "porcentagem_farms": 29.17,
-            "total_top310": 310
+        // Dados da análise - serão calculados dinamicamente
+        let dados = {
+            "poder_total_top300": 0,
+            "poder_total_farms": 0,
+            "total_farms": 0,
+            "porcentagem_farms": 0,
+            "total_top300": 300
         };
 
         // Função para formatar números
@@ -94,103 +141,271 @@
             return num.toLocaleString('pt-BR');
         }
 
-        // Atualizar cards
-        document.getElementById('poderTotal').textContent = formatNumber(dados.poder_total_top310);
-        document.getElementById('poderFarms').textContent = formatNumber(dados.poder_total_farms);
-        document.getElementById('totalFarms').textContent = dados.total_farms;
-        document.getElementById('percentualFarms').textContent = dados.porcentagem_farms + '%';
+        // Função para calcular estatísticas
+        async function calculateStatistics() {
+            try {
+                // Carregar dados da análise gerada pelo Python
+                const response = await fetch('analise_reino.json');
+                const analiseData = await response.json();
+                
+                // Usar dados reais da análise
+                dados.poder_total_top300 = analiseData.poder_total_top300;
+                dados.poder_total_farms = analiseData.poder_total_farms;
+                dados.total_farms = analiseData.total_farms_top300; // Farms que impactam o cálculo
+                dados.porcentagem_farms = analiseData.porcentagem_farms;
+                
+            } catch (error) {
+                console.error('Erro ao carregar análise do reino:', error);
+                
+                // Fallback: calcular baseado nos dados das farms carregadas
+                // Filtrar apenas farms dentro do top 300
+                const farmsTop300 = farmsData.filter(farm => farm['#'] <= 300);
+                dados.poder_total_farms = farmsTop300.reduce((total, farm) => total + farm.Power, 0);
+                dados.total_farms = farmsTop300.length;
+                
+                // Estimativa do poder total (baseada na proporção conhecida)
+                dados.poder_total_top300 = Math.round(dados.poder_total_farms / 0.2938);
+                dados.porcentagem_farms = ((dados.poder_total_farms / dados.poder_total_top300) * 100).toFixed(2);
+            }
+        }
 
-        // Gráfico de Pizza
-        const ctxPizza = document.getElementById('pizzaChart').getContext('2d');
-        new Chart(ctxPizza, {
-            type: 'pie',
-            data: {
-                labels: ['Farms', 'Outros Governadores'],
-                datasets: [{
-                    data: [dados.poder_total_farms, dados.poder_total_top310 - dados.poder_total_farms],
-                    backgroundColor: ['#ef4444', '#10b981'],
-                    borderColor: '#374151',
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        labels: {
-                            color: '#ffffff'
+        // Função para atualizar cards
+        function updateCards() {
+            document.getElementById('poderTotal').textContent = formatNumber(dados.poder_total_top300);
+            document.getElementById('poderFarms').textContent = formatNumber(dados.poder_total_farms);
+            document.getElementById('totalFarms').textContent = dados.total_farms;
+            document.getElementById('percentualFarms').textContent = dados.porcentagem_farms + '%';
+        }
+
+        // Variáveis para os gráficos
+        let pizzaChart = null;
+        let barChart = null;
+
+        // Função para atualizar gráficos
+        function updateCharts() {
+            const poderOutros = dados.poder_total_top300 - dados.poder_total_farms;
+
+            // Atualizar ou criar gráfico de pizza
+            const ctxPizza = document.getElementById('pizzaChart').getContext('2d');
+            if (pizzaChart) {
+                pizzaChart.destroy();
+            }
+            pizzaChart = new Chart(ctxPizza, {
+                type: 'pie',
+                data: {
+                    labels: ['Farms', 'Outros Governadores'],
+                    datasets: [{
+                        data: [dados.poder_total_farms, poderOutros],
+                        backgroundColor: ['#ef4444', '#10b981'],
+                        borderColor: '#374151',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#ffffff'
+                            }
                         }
                     }
                 }
-            }
-        });
+            });
 
-        // Gráfico de Barras
-        const ctxBar = document.getElementById('barChart').getContext('2d');
-        new Chart(ctxBar, {
-            type: 'bar',
-            data: {
-                labels: ['Poder das Farms', 'Poder dos Outros'],
-                datasets: [{
-                    data: [dados.poder_total_farms, dados.poder_total_top310 - dados.poder_total_farms],
-                    backgroundColor: ['#ef4444', '#10b981'],
-                    borderColor: ['#dc2626', '#059669'],
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
+            // Atualizar ou criar gráfico de barras
+            const ctxBar = document.getElementById('barChart').getContext('2d');
+            if (barChart) {
+                barChart.destroy();
+            }
+            barChart = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: ['Poder das Farms', 'Poder dos Outros'],
+                    datasets: [{
+                        data: [dados.poder_total_farms, poderOutros],
+                        backgroundColor: ['#ef4444', '#10b981'],
+                        borderColor: ['#dc2626', '#059669'],
+                        borderWidth: 2
+                    }]
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            color: '#ffffff',
-                            callback: function(value) {
-                                return (value / 1000000000).toFixed(1) + 'B';
-                            }
-                        },
-                        grid: {
-                            color: '#374151'
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
                         }
                     },
-                    x: {
-                        ticks: {
-                            color: '#ffffff'
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#ffffff',
+                                callback: function(value) {
+                                    return (value / 1000000000).toFixed(1) + 'B';
+                                }
+                            },
+                            grid: {
+                                color: '#374151'
+                            }
                         },
-                        grid: {
-                            color: '#374151'
+                        x: {
+                            ticks: {
+                                color: '#ffffff'
+                            },
+                            grid: {
+                                color: '#374151'
+                            }
                         }
                     }
                 }
-            }
-        });
-
-        // Carregar e exibir top farms
-        fetch('dados_filtrados.json')
-            .then(response => response.json())
-            .then(farms => {
-                const topFarms = farms.slice(0, 10);
-                const tbody = document.getElementById('topFarms');
-                
-                topFarms.forEach((farm, index) => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td class="py-2 px-2 md:px-4">#${farm['#']}</td>
-                        <td class="py-2 px-2 md:px-4 font-semibold">${farm['Governor Name']}</td>
-                        <td class="py-2 px-2 md:px-4 text-gray-400 hidden sm:table-cell">${farm['Governor ID']}</td>
-                        <td class="py-2 px-2 md:px-4 text-green-400">${formatNumber(farm.Power)}</td>
-                        <td class="py-2 px-2 md:px-4 text-blue-400 hidden md:table-cell">${farm.Alliance || 'Sem aliança'}</td>
-                    `;
-                    tbody.appendChild(row);
-                });
             });
+        }
+
+        // Variáveis para paginação e filtros
+        let allFarms = [];
+        let filteredFarms = [];
+        let currentPage = 1;
+        let itemsPerPage = 15;
+
+        // Dados das farms carregados de arquivo externo
+        let farmsData = [];
+
+        // Carregar dados das farms do arquivo JSON
+        async function loadFarmsData() {
+            try {
+                const response = await fetch('dados_filtrados.json');
+                farmsData = await response.json();
+                initializeData();
+            } catch (error) {
+                console.error('Erro ao carregar dados das farms:', error);
+                // Fallback para dados vazios se houver erro
+                farmsData = [];
+                initializeData();
+            }
+        }
+
+        // Processar dados das farms
+        async function initializeData() {
+                const farms = farmsData;
+                allFarms = farms;
+                filteredFarms = [...farms];
+                
+                // Calcular estatísticas e atualizar cards
+                await calculateStatistics();
+                updateCards();
+                
+                // Popular filtro de alianças
+                const alliances = [...new Set(farms.map(farm => farm.Alliance).filter(a => a))];
+                const allianceSelect = document.getElementById('allianceFilter');
+                alliances.sort().forEach(alliance => {
+                    const option = document.createElement('option');
+                    option.value = alliance;
+                    option.textContent = alliance;
+                    allianceSelect.appendChild(option);
+                });
+                
+                // Atualizar gráficos
+                updateCharts();
+                
+                displayFarms();
+                setupEventListeners();
+            }
+        
+        // Inicializar quando a página carregar
+        document.addEventListener('DOMContentLoaded', loadFarmsData);
+
+        // Função para exibir farms na tabela
+        function displayFarms() {
+            const tbody = document.getElementById('topFarms');
+            tbody.innerHTML = '';
+            
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const farmsToShow = filteredFarms.slice(startIndex, endIndex);
+            
+            farmsToShow.forEach((farm, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="py-2 px-2 md:px-4">#${farm['#']}</td>
+                    <td class="py-2 px-2 md:px-4 font-semibold">${farm['Governor Name']}</td>
+                    <td class="py-2 px-2 md:px-4 text-gray-400 hidden sm:table-cell">${farm['Governor ID']}</td>
+                    <td class="py-2 px-2 md:px-4 text-green-400">${formatNumber(farm.Power)}</td>
+                    <td class="py-2 px-2 md:px-4 text-blue-400 hidden md:table-cell">${farm.Alliance || 'Sem aliança'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            updatePaginationInfo();
+        }
+
+        // Atualizar informações de paginação
+        function updatePaginationInfo() {
+            const totalPages = Math.ceil(filteredFarms.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage + 1;
+            const endIndex = Math.min(currentPage * itemsPerPage, filteredFarms.length);
+            
+            document.getElementById('showingStart').textContent = filteredFarms.length > 0 ? startIndex : 0;
+            document.getElementById('showingEnd').textContent = endIndex;
+            document.getElementById('totalResults').textContent = filteredFarms.length;
+            document.getElementById('pageInfo').textContent = `Página ${currentPage} de ${totalPages}`;
+            
+            document.getElementById('prevBtn').disabled = currentPage === 1;
+            document.getElementById('nextBtn').disabled = currentPage === totalPages || totalPages === 0;
+        }
+
+        // Função para filtrar farms
+        function filterFarms() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const selectedAlliance = document.getElementById('allianceFilter').value;
+            
+            filteredFarms = allFarms.filter(farm => {
+                const matchesSearch = !searchTerm || 
+                    farm['Governor Name'].toLowerCase().includes(searchTerm) ||
+                    farm['Governor ID'].toString().includes(searchTerm);
+                    
+                const matchesAlliance = !selectedAlliance || farm.Alliance === selectedAlliance;
+                
+                return matchesSearch && matchesAlliance;
+            });
+            
+            currentPage = 1;
+            displayFarms();
+        }
+
+        // Configurar event listeners
+        function setupEventListeners() {
+            // Pesquisa em tempo real
+            document.getElementById('searchInput').addEventListener('input', filterFarms);
+            
+            // Filtro de aliança
+            document.getElementById('allianceFilter').addEventListener('change', filterFarms);
+            
+            // Seletor de itens por página
+            document.getElementById('itemsPerPageSelect').addEventListener('change', (e) => {
+                itemsPerPage = parseInt(e.target.value);
+                currentPage = 1; // Resetar para primeira página
+                displayFarms();
+            });
+            
+            // Botões de paginação
+            document.getElementById('prevBtn').addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    displayFarms();
+                }
+            });
+            
+            document.getElementById('nextBtn').addEventListener('click', () => {
+                const totalPages = Math.ceil(filteredFarms.length / itemsPerPage);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    displayFarms();
+                }
+            });
+        }
     </script>
 </body>
 </html>

@@ -5,11 +5,11 @@ def analisar_dados():
     arquivo_excel = "3618_all_governors_20250903_212630(1).xlsx"
     arquivo_json = "dados_filtrados.json"
     
-    # Ler top 310 da planilha
+    # Ler top 300 da planilha
     df = pd.read_excel(arquivo_excel)
-    df_top310 = df.head(310)
+    df_top300 = df.head(300)
     
-    # Calcular poder total dos top 310
+    # Calcular poder total dos top 300
     col_poder = None
     for col in df.columns:
         if 'power' in col.lower() or 'poder' in col.lower():
@@ -20,34 +20,43 @@ def analisar_dados():
         print("Coluna de poder não encontrada")
         return
     
-    poder_total_top310 = df_top310[col_poder].sum()
+    poder_total_top300 = df_top300[col_poder].sum()
     
     # Ler dados filtrados (farms)
     with open(arquivo_json, 'r', encoding='utf-8') as f:
-        dados_farms = json.load(f)
+        todas_farms = json.load(f)
     
-    # Calcular poder total das farms
-    poder_total_farms = sum(farm['Power'] for farm in dados_farms)
+    # Filtrar apenas as farms que estão no top 300
+    farms_top300 = []
+    for farm in todas_farms:
+        if farm.get('#', 0) <= 300:  # Considerar apenas farms dentro do top 300
+            farms_top300.append(farm)
+    
+    # Calcular poder total das farms que estão no top 300
+    poder_total_farms = sum(farm['Power'] for farm in farms_top300)
     
     # Calcular estatísticas
-    total_farms = len(dados_farms)
-    porcentagem_farms = (poder_total_farms / poder_total_top310) * 100
+    total_farms_top300 = len(farms_top300)  # Farms dentro do top 300
+    total_farms_todas = len(todas_farms)    # Todas as farms encontradas
+    porcentagem_farms = (poder_total_farms / poder_total_top300) * 100
     
     resultado = {
-        'poder_total_top310': int(poder_total_top310),
+        'poder_total_top300': int(poder_total_top300),
         'poder_total_farms': int(poder_total_farms),
-        'total_farms': total_farms,
+        'total_farms_top300': total_farms_top300,
+        'total_farms_todas': total_farms_todas,
         'porcentagem_farms': round(porcentagem_farms, 2),
-        'total_top310': 310
+        'total_top300': 300
     }
     
     # Salvar resultado em JSON
     with open('analise_reino.json', 'w', encoding='utf-8') as f:
         json.dump(resultado, f, ensure_ascii=False, indent=2)
     
-    print(f"Poder total top 310: {poder_total_top310:,}")
-    print(f"Poder total farms: {poder_total_farms:,}")
-    print(f"Total de farms: {total_farms}")
+    print(f"Poder total top 300: {poder_total_top300:,}")
+    print(f"Poder total farms (apenas top 300): {poder_total_farms:,}")
+    print(f"Farms no top 300: {total_farms_top300}")
+    print(f"Total de farms encontradas: {total_farms_todas}")
     print(f"% do poder nas farms: {porcentagem_farms:.2f}%")
     
     return resultado

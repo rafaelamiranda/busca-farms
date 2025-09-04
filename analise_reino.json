@@ -1,7 +1,8 @@
 {
-  "poder_total_top310": 8901031920,
-  "poder_total_farms": 2596766566,
-  "total_farms": 114,
-  "porcentagem_farms": 29.17,
-  "total_top310": 310
+  "poder_total_top300": 8748745285,
+  "poder_total_farms": 2570226833,
+  "total_farms_top300": 111,
+  "total_farms_todas": 124,
+  "porcentagem_farms": 29.38,
+  "total_top300": 300
 }

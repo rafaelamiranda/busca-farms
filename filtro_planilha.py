@@ -9,8 +9,7 @@ def filtrar_dados_planilha():
     try:
         df = pd.read_excel(arquivo_excel)
         
-        df_limitado = df.head(310)
-        
+        # Filtrar TODAS as farms, não apenas as do top 310
         colunas = df.columns.tolist()
         col_ch = colunas[3]
         col_clickable = colunas[4] 
@@ -21,12 +20,12 @@ def filtrar_dados_planilha():
                 col_alianca = col
                 break
         
-        filtro = (df_limitado[col_ch] == 25) & (df_limitado[col_clickable] == True)
+        filtro = (df[col_ch] == 25) & (df[col_clickable] == True)
         
         if col_alianca:
-            filtro = filtro & (df_limitado[col_alianca] != "Thousand Sunny br")
+            filtro = filtro & (df[col_alianca] != "Thousand Sunny br")
         
-        dados_filtrados = df_limitado[filtro]
+        dados_filtrados = df[filtro]
         dados_json = dados_filtrados.to_dict('records')
         
         # Substituir NaN por string vazia
@@ -45,8 +44,8 @@ def filtrar_dados_planilha():
         with open(arquivo_json, 'w', encoding='utf-8') as f:
             json.dump(dados_existentes, f, ensure_ascii=False, indent=2)
         
-        print(f"Processados {len(df_limitado)} registros")
-        print(f"Filtrados {len(dados_filtrados)} registros")
+        print(f"Processados {len(df)} registros totais")
+        print(f"Filtrados {len(dados_filtrados)} farms encontradas")
         print(f"Total no JSON: {len(dados_existentes)} registros")
         
     except Exception as e:

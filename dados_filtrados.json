@@ -18,6 +18,15 @@
     "Power": 39402502
   },
   {
+    "#": 75,
+    "Governor ID": 188194506,
+    "Governor Name": "ᴼᴾOneiros",
+    "CH": 25,
+    "Clickable": true,
+    "Alliance": "",
+    "Power": 35469025
+  },
+  {
     "#": 80,
     "Governor ID": 186083484,
     "Governor Name": "D URСHINS",
@@ -25,6 +34,15 @@
     "Clickable": true,
     "Alliance": "League of the Wise",
     "Power": 34602535
+  },
+  {
+    "#": 81,
+    "Governor ID": 188241513,
+    "Governor Name": "ᴼᴾJOTARO乂",
+    "CH": 25,
+    "Clickable": true,
+    "Alliance": "RED FORCE!",
+    "Power": 34588494
   },
   {
     "#": 85,
@@ -1015,5 +1033,86 @@
     "Clickable": true,
     "Alliance": "Prøject A!",
     "Power": 15057310
+  },
+  {
+    "#": 315,
+    "Governor ID": 188839381,
+    "Governor Name": "AYNEN",
+    "CH": 25,
+    "Clickable": true,
+    "Alliance": "",
+    "Power": 14701374
+  },
+  {
+    "#": 316,
+    "Governor ID": 188635449,
+    "Governor Name": "ᴼᴾanneskulb",
+    "CH": 25,
+    "Clickable": true,
+    "Alliance": "RED FORCE!",
+    "Power": 14651307
+  },
+  {
+    "#": 324,
+    "Governor ID": 188077518,
+    "Governor Name": "ᴼᴾScufStar",
+    "CH": 25,
+    "Clickable": true,
+    "Alliance": "",
+    "Power": 14043886
+  },
+  {
+    "#": 328,
+    "Governor ID": 188640590,
+    "Governor Name": "Want329",
+    "CH": 25,
+    "Clickable": true,
+    "Alliance": "Pertanian 3618",
+    "Power": 13695551
+  },
+  {
+    "#": 368,
+    "Governor ID": 169851396,
+    "Governor Name": "Z OR O",
+    "CH": 25,
+    "Clickable": true,
+    "Alliance": "",
+    "Power": 12271017
+  },
+  {
+    "#": 369,
+    "Governor ID": 188687391,
+    "Governor Name": "Klin I",
+    "CH": 25,
+    "Clickable": true,
+    "Alliance": "",
+    "Power": 12195929
+  },
+  {
+    "#": 381,
+    "Governor ID": 188581803,
+    "Governor Name": "ᴼᴾCadaval",
+    "CH": 25,
+    "Clickable": true,
+    "Alliance": "",
+    "Power": 11813540
+  },
+  {
+    "#": 382,
+    "Governor ID": 194839086,
+    "Governor Name": "Sugar f1",
+    "CH": 25,
+    "Clickable": true,
+    "Alliance": "",
+    "Power": 11786437
+  },
+  {
+    "#": 418,
+    "Governor ID": 188641275,
+    "Governor Name": "румпел",
+    "CH": 25,
+    "Clickable": true,
+    "Alliance": "RED ANARCHY",
+    "Power": 10673071
   }
 ]
