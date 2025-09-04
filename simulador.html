@@ -403,7 +403,7 @@
             const excludedPower = excludedFarms.reduce((total, farm) => total + farm.Power, 0);
             
             dadosSimulados = {
-                poder_total_top300: dadosOriginais.poder_total_top300, // Não muda
+                poder_total_top300: dadosOriginais.poder_total_top300 - excludedPower, // Recalcula tirando o poder das farms excluídas
                 poder_total_farms: dadosOriginais.poder_total_farms - excludedPower,
                 total_farms: dadosOriginais.total_farms - excludedFarms.length,
                 porcentagem_farms: 0,
