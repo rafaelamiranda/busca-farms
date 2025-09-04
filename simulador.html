@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador - Reino 3618 - Impacto das Farms</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-8">
+            <h1 class="text-2xl md:text-4xl font-bold mb-2 text-blue-400">Reino 3618 - Simulador de Farms</h1>
+            <p class="text-sm md:text-base text-gray-300">Simule o impacto removendo farms específicas</p>
+        </header>
+
+        <!-- Simulador de Exclusão -->
+        <div class="bg-gray-800 rounded-lg p-4 md:p-6 mb-8">
+            <h2 class="text-xl md:text-2xl font-bold mb-4">Simular Remoção de Farms</h2>
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex-1">
+                    <label class="block text-sm font-semibold text-gray-300 mb-2">
+                        IDs dos Governadores para Remover:
+                    </label>
+                    <input type="text" 
+                           id="excludeIds" 
+                           placeholder="Ex: 188585068, 188365026, 186083484..." 
+                           class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:border-blue-500">
+                    <p class="text-xs text-gray-400 mt-1">Separe múltiplos IDs por vírgula</p>
+                </div>
+                <div class="flex items-end">
+                    <button id="simulateBtn" 
+                            class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-white font-semibold transition-colors">
+                        Simular
+                    </button>
+                    <button id="resetBtn" 
+                            class="ml-2 px-6 py-2 bg-gray-600 hover:bg-gray-700 rounded-md text-white font-semibold transition-colors">
+                        Resetar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cards com estatísticas principais -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+            <div class="bg-gray-800 rounded-lg p-4 md:p-6 text-center">
+                <h3 class="text-sm md:text-lg font-semibold text-gray-300 mb-2">Poder Total (Top 300)</h3>
+                <p class="text-2xl md:text-3xl font-bold text-green-400" id="poderTotal">-</p>
+                <p class="text-xs text-gray-400 mt-1" id="diferencaTotal">-</p>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-4 md:p-6 text-center">
+                <h3 class="text-sm md:text-lg font-semibold text-gray-300 mb-2">Poder das Farms</h3>
+                <p class="text-2xl md:text-3xl font-bold text-red-400" id="poderFarms">-</p>
+                <p class="text-xs text-gray-400 mt-1" id="diferencaFarms">-</p>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-4 md:p-6 text-center">
+                <h3 class="text-sm md:text-lg font-semibold text-gray-300 mb-2">Total de Farms</h3>
+                <p class="text-2xl md:text-3xl font-bold text-yellow-400" id="totalFarms">-</p>
+                <p class="text-xs text-gray-400 mt-1" id="diferencaQuantidade">-</p>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-4 md:p-6 text-center">
+                <h3 class="text-sm md:text-lg font-semibold text-gray-300 mb-2">% Farms do Poder</h3>
+                <p class="text-2xl md:text-3xl font-bold text-purple-400" id="percentualFarms">-</p>
+                <p class="text-xs text-gray-400 mt-1" id="diferencaPercentual">-</p>
+            </div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+            <!-- Gráfico de Pizza -->
+            <div class="bg-gray-800 rounded-lg p-4 md:p-6">
+                <h2 class="text-xl md:text-2xl font-bold mb-4 text-center">Distribuição do Poder</h2>
+                <div class="relative h-64 md:h-80">
+                    <canvas id="pizzaChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Gráfico de Barras -->
+            <div class="bg-gray-800 rounded-lg p-4 md:p-6">
+                <h2 class="text-xl md:text-2xl font-bold mb-4 text-center">Comparativo de Poder</h2>
+                <div class="relative h-64 md:h-80">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Farms Excluídas -->
+        <div class="bg-gray-800 rounded-lg p-4 md:p-6 mt-6 md:mt-8" id="excludedSection" style="display: none;">
+            <h2 class="text-xl md:text-2xl font-bold mb-4">Farms Excluídas da Simulação</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm md:text-base">
+                    <thead class="border-b border-gray-600">
+                        <tr>
+                            <th class="py-2 px-2 md:px-4">Rank</th>
+                            <th class="py-2 px-2 md:px-4">Nome</th>
+                            <th class="py-2 px-2 md:px-4 hidden sm:table-cell">ID</th>
+                            <th class="py-2 px-2 md:px-4">Poder</th>
+                            <th class="py-2 px-2 md:px-4 hidden md:table-cell">Aliança</th>
+                        </tr>
+                    </thead>
+                    <tbody id="excludedFarms" class="divide-y divide-gray-600">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tabela com todas as farms -->
+        <div class="bg-gray-800 rounded-lg p-4 md:p-6 mt-6 md:mt-8">
+            <h2 class="text-xl md:text-2xl font-bold mb-4">Farms CH 25 - Reino 3618</h2>
+            
+            <!-- Filtros -->
+            <div class="flex flex-col md:flex-row gap-4 mb-6">
+                <div class="flex-1">
+                    <input type="text" 
+                           id="searchInput" 
+                           placeholder="Pesquisar por nick ou ID..." 
+                           class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:border-blue-500">
+                </div>
+                <div class="md:w-48">
+                    <select id="allianceFilter" 
+                            class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:border-blue-500">
+                        <option value="">Todas as Alianças</option>
+                    </select>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm md:text-base">
+                    <thead class="border-b border-gray-600">
+                        <tr>
+                            <th class="py-2 px-2 md:px-4">Rank</th>
+                            <th class="py-2 px-2 md:px-4">Nome</th>
+                            <th class="py-2 px-2 md:px-4 hidden sm:table-cell">ID</th>
+                            <th class="py-2 px-2 md:px-4">Poder</th>
+                            <th class="py-2 px-2 md:px-4 hidden md:table-cell">Aliança</th>
+                        </tr>
+                    </thead>
+                    <tbody id="topFarms" class="divide-y divide-gray-600">
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Paginação -->
+            <div class="flex flex-col md:flex-row justify-between items-center mt-4 gap-4">
+                <div class="flex flex-col md:flex-row items-center gap-4">
+                    <div class="text-sm text-gray-400">
+                        Mostrando <span id="showingStart">0</span> - <span id="showingEnd">0</span> de <span id="totalResults">0</span> farms
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm text-gray-400">Itens por página:</label>
+                        <select id="itemsPerPageSelect" 
+                                class="px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-blue-500">
+                            <option value="10">10</option>
+                            <option value="15" selected>15</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button id="prevBtn" 
+                            class="px-3 py-1 bg-gray-700 border border-gray-600 rounded text-white hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Anterior
+                    </button>
+                    <span id="pageInfo" class="px-3 py-1 text-gray-400">Página 1 de 1</span>
+                    <button id="nextBtn" 
+                            class="px-3 py-1 bg-gray-700 border border-gray-600 rounded text-white hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Próxima
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center mt-6 md:mt-8 text-gray-400 px-2">
+            <p class="text-sm md:text-base">Simulador baseado nos dados dos primeiros 300 governadores do reino 3618</p>
+            <p class="text-xs md:text-sm mt-2">Farms identificadas: CH=25, Clickable=TRUE, Aliança≠"Thousand Sunny br"</p>
+        </footer>
+    </div>
+
+    <script>
+        // Dados da análise - originais e simulados
+        let dadosOriginais = {
+            "poder_total_top300": 0,
+            "poder_total_farms": 0,
+            "total_farms": 0,
+            "porcentagem_farms": 0,
+            "total_top300": 300
+        };
+
+        let dadosSimulados = { ...dadosOriginais };
+        let excludedIds = [];
+
+        // Função para formatar números
+        function formatNumber(num) {
+            return num.toLocaleString('pt-BR');
+        }
+
+        // Função para calcular diferença
+        function formatDifference(original, simulated, isPercent = false) {
+            const diff = simulated - original;
+            if (diff === 0) return "sem alteração";
+            
+            const prefix = diff > 0 ? "+" : "";
+            const suffix = isPercent ? "%" : "";
+            return `${prefix}${isPercent ? diff.toFixed(2) : formatNumber(diff)}${suffix}`;
+        }
+
+        // Carregar dados originais
+        async function loadOriginalData() {
+            try {
+                const response = await fetch('analise_reino.json');
+                const analiseData = await response.json();
+                
+                dadosOriginais = {
+                    poder_total_top300: analiseData.poder_total_top300,
+                    poder_total_farms: analiseData.poder_total_farms,
+                    total_farms: analiseData.total_farms_top300,
+                    porcentagem_farms: analiseData.porcentagem_farms,
+                    total_top300: 300
+                };
+                
+                dadosSimulados = { ...dadosOriginais };
+                
+            } catch (error) {
+                console.error('Erro ao carregar dados originais:', error);
+            }
+        }
+
+        // Função para atualizar cards com diferenças
+        function updateCards() {
+            document.getElementById('poderTotal').textContent = formatNumber(dadosSimulados.poder_total_top300);
+            document.getElementById('poderFarms').textContent = formatNumber(dadosSimulados.poder_total_farms);
+            document.getElementById('totalFarms').textContent = dadosSimulados.total_farms;
+            document.getElementById('percentualFarms').textContent = dadosSimulados.porcentagem_farms.toFixed(2) + '%';
+
+            // Mostrar diferenças
+            document.getElementById('diferencaTotal').textContent = formatDifference(dadosOriginais.poder_total_top300, dadosSimulados.poder_total_top300);
+            document.getElementById('diferencaFarms').textContent = formatDifference(dadosOriginais.poder_total_farms, dadosSimulados.poder_total_farms);
+            document.getElementById('diferencaQuantidade').textContent = formatDifference(dadosOriginais.total_farms, dadosSimulados.total_farms);
+            document.getElementById('diferencaPercentual').textContent = formatDifference(dadosOriginais.porcentagem_farms, dadosSimulados.porcentagem_farms, true);
+        }
+
+        // Variáveis para os gráficos
+        let pizzaChart = null;
+        let barChart = null;
+
+        // Função para atualizar gráficos
+        function updateCharts() {
+            const poderOutros = dadosSimulados.poder_total_top300 - dadosSimulados.poder_total_farms;
+
+            // Atualizar ou criar gráfico de pizza
+            const ctxPizza = document.getElementById('pizzaChart').getContext('2d');
+            if (pizzaChart) {
+                pizzaChart.destroy();
+            }
+            pizzaChart = new Chart(ctxPizza, {
+                type: 'pie',
+                data: {
+                    labels: ['Farms', 'Outros Governadores'],
+                    datasets: [{
+                        data: [dadosSimulados.poder_total_farms, poderOutros],
+                        backgroundColor: ['#ef4444', '#10b981'],
+                        borderColor: '#374151',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#ffffff'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Atualizar ou criar gráfico de barras
+            const ctxBar = document.getElementById('barChart').getContext('2d');
+            if (barChart) {
+                barChart.destroy();
+            }
+            barChart = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: ['Poder das Farms', 'Poder dos Outros'],
+                    datasets: [{
+                        data: [dadosSimulados.poder_total_farms, poderOutros],
+                        backgroundColor: ['#ef4444', '#10b981'],
+                        borderColor: ['#dc2626', '#059669'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#ffffff',
+                                callback: function(value) {
+                                    return (value / 1000000000).toFixed(1) + 'B';
+                                }
+                            },
+                            grid: {
+                                color: '#374151'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#ffffff'
+                            },
+                            grid: {
+                                color: '#374151'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Variáveis para paginação e filtros
+        let allFarms = [];
+        let filteredFarms = [];
+        let currentPage = 1;
+        let itemsPerPage = 15;
+
+        // Dados das farms carregados de arquivo externo
+        let farmsData = [];
+
+        // Carregar dados das farms do arquivo JSON
+        async function loadFarmsData() {
+            try {
+                const response = await fetch('dados_filtrados.json');
+                farmsData = await response.json();
+                await loadOriginalData();
+                initializeData();
+            } catch (error) {
+                console.error('Erro ao carregar dados das farms:', error);
+                farmsData = [];
+                await loadOriginalData();
+                initializeData();
+            }
+        }
+
+        // Processar dados das farms
+        function initializeData() {
+            const farms = farmsData;
+            allFarms = farms;
+            filteredFarms = [...farms];
+            
+            updateCards();
+            
+            // Popular filtro de alianças
+            const alliances = [...new Set(farms.map(farm => farm.Alliance).filter(a => a))];
+            const allianceSelect = document.getElementById('allianceFilter');
+            alliances.sort().forEach(alliance => {
+                const option = document.createElement('option');
+                option.value = alliance;
+                option.textContent = alliance;
+                allianceSelect.appendChild(option);
+            });
+            
+            updateCharts();
+            displayFarms();
+            setupEventListeners();
+        }
+
+        // Função para simular exclusão de farms
+        function simulateExclusion() {
+            const input = document.getElementById('excludeIds').value.trim();
+            if (!input) {
+                resetSimulation();
+                return;
+            }
+
+            // Parsear IDs
+            excludedIds = input.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+            
+            // Encontrar farms excluídas que estão no top 300
+            const excludedFarms = farmsData.filter(farm => 
+                excludedIds.includes(farm['Governor ID']) && farm['#'] <= 300
+            );
+
+            // Calcular novos valores
+            const excludedPower = excludedFarms.reduce((total, farm) => total + farm.Power, 0);
+            
+            dadosSimulados = {
+                poder_total_top300: dadosOriginais.poder_total_top300, // Não muda
+                poder_total_farms: dadosOriginais.poder_total_farms - excludedPower,
+                total_farms: dadosOriginais.total_farms - excludedFarms.length,
+                porcentagem_farms: 0,
+                total_top300: 300
+            };
+
+            // Recalcular percentual
+            dadosSimulados.porcentagem_farms = (dadosSimulados.poder_total_farms / dadosSimulados.poder_total_top300) * 100;
+
+            // Mostrar farms excluídas
+            displayExcludedFarms(excludedFarms);
+            
+            updateCards();
+            updateCharts();
+        }
+
+        // Exibir farms excluídas
+        function displayExcludedFarms(excludedFarms) {
+            const section = document.getElementById('excludedSection');
+            const tbody = document.getElementById('excludedFarms');
+            
+            if (excludedFarms.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+            tbody.innerHTML = '';
+
+            excludedFarms.forEach(farm => {
+                const row = document.createElement('tr');
+                row.className = 'bg-red-900 bg-opacity-30';
+                row.innerHTML = `
+                    <td class="py-2 px-2 md:px-4">#${farm['#']}</td>
+                    <td class="py-2 px-2 md:px-4 font-semibold">${farm['Governor Name']}</td>
+                    <td class="py-2 px-2 md:px-4 text-gray-400 hidden sm:table-cell">${farm['Governor ID']}</td>
+                    <td class="py-2 px-2 md:px-4 text-red-400">${formatNumber(farm.Power)}</td>
+                    <td class="py-2 px-2 md:px-4 text-blue-400 hidden md:table-cell">${farm.Alliance || 'Sem aliança'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Resetar simulação
+        function resetSimulation() {
+            excludedIds = [];
+            dadosSimulados = { ...dadosOriginais };
+            document.getElementById('excludeIds').value = '';
+            document.getElementById('excludedSection').style.display = 'none';
+            updateCards();
+            updateCharts();
+        }
+
+        // Inicializar quando a página carregar
+        document.addEventListener('DOMContentLoaded', loadFarmsData);
+
+        // Função para exibir farms na tabela
+        function displayFarms() {
+            const tbody = document.getElementById('topFarms');
+            tbody.innerHTML = '';
+            
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const farmsToShow = filteredFarms.slice(startIndex, endIndex);
+            
+            farmsToShow.forEach((farm, index) => {
+                const row = document.createElement('tr');
+                const isExcluded = excludedIds.includes(farm['Governor ID']);
+                
+                if (isExcluded) {
+                    row.className = 'bg-red-900 bg-opacity-20';
+                }
+                
+                row.innerHTML = `
+                    <td class="py-2 px-2 md:px-4">#${farm['#']}</td>
+                    <td class="py-2 px-2 md:px-4 font-semibold ${isExcluded ? 'text-red-300' : ''}">${farm['Governor Name']}</td>
+                    <td class="py-2 px-2 md:px-4 text-gray-400 hidden sm:table-cell">${farm['Governor ID']}</td>
+                    <td class="py-2 px-2 md:px-4 ${isExcluded ? 'text-red-400' : 'text-green-400'}">${formatNumber(farm.Power)}</td>
+                    <td class="py-2 px-2 md:px-4 text-blue-400 hidden md:table-cell">${farm.Alliance || 'Sem aliança'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            updatePaginationInfo();
+        }
+
+        // Atualizar informações de paginação
+        function updatePaginationInfo() {
+            const totalPages = Math.ceil(filteredFarms.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage + 1;
+            const endIndex = Math.min(currentPage * itemsPerPage, filteredFarms.length);
+            
+            document.getElementById('showingStart').textContent = filteredFarms.length > 0 ? startIndex : 0;
+            document.getElementById('showingEnd').textContent = endIndex;
+            document.getElementById('totalResults').textContent = filteredFarms.length;
+            document.getElementById('pageInfo').textContent = `Página ${currentPage} de ${totalPages}`;
+            
+            document.getElementById('prevBtn').disabled = currentPage === 1;
+            document.getElementById('nextBtn').disabled = currentPage === totalPages || totalPages === 0;
+        }
+
+        // Função para filtrar farms
+        function filterFarms() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const selectedAlliance = document.getElementById('allianceFilter').value;
+            
+            filteredFarms = allFarms.filter(farm => {
+                const matchesSearch = !searchTerm || 
+                    farm['Governor Name'].toLowerCase().includes(searchTerm) ||
+                    farm['Governor ID'].toString().includes(searchTerm);
+                    
+                const matchesAlliance = !selectedAlliance || farm.Alliance === selectedAlliance;
+                
+                return matchesSearch && matchesAlliance;
+            });
+            
+            currentPage = 1;
+            displayFarms();
+        }
+
+        // Configurar event listeners
+        function setupEventListeners() {
+            // Pesquisa em tempo real
+            document.getElementById('searchInput').addEventListener('input', filterFarms);
+            
+            // Filtro de aliança
+            document.getElementById('allianceFilter').addEventListener('change', filterFarms);
+            
+            // Seletor de itens por página
+            document.getElementById('itemsPerPageSelect').addEventListener('change', (e) => {
+                itemsPerPage = parseInt(e.target.value);
+                currentPage = 1;
+                displayFarms();
+            });
+            
+            // Botões de paginação
+            document.getElementById('prevBtn').addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    displayFarms();
+                }
+            });
+            
+            document.getElementById('nextBtn').addEventListener('click', () => {
+                const totalPages = Math.ceil(filteredFarms.length / itemsPerPage);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    displayFarms();
+                }
+            });
+
+            // Botões do simulador
+            document.getElementById('simulateBtn').addEventListener('click', simulateExclusion);
+            document.getElementById('resetBtn').addEventListener('click', resetSimulation);
+            
+            // Enter no input
+            document.getElementById('excludeIds').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    simulateExclusion();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
